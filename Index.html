@@ -1,0 +1,1241 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Администрирование прайсов</title>
+
+    <link href="libs/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="libs/css/ng-table.css" rel="stylesheet" />
+    <link href="libs/css/treeGrid.css" rel="stylesheet" />
+    <link href="libs/css/daterangepicker.css" rel="stylesheet" />
+    <link href="libs/css/robotoGoogleFont.css" rel="stylesheet" />
+    <link href="libs/css/font-awesome.min.css" rel="stylesheet" />
+
+
+    <link href="css/PriceAdmin.css" rel="stylesheet" />
+
+
+    <script src="libs/js/jquery.min.js"></script>
+    <script src="libs/js/bootstrap.min.js"></script>
+    <script src="libs/js/moment-with-locales.js"></script>
+    <script src="libs/js/angular.min-1.4.8.js"></script>
+    <script src="libs/js/ui-bootstrap-tpls-1.3.0.min.js"></script>
+    <script src="libs/js/ng-table.js"></script>
+    <script src="libs/js/angular-locale_ru-ru.js"></script>
+    <script src="libs/js/tree-grid-directive.js"></script>
+
+    <script src="js/PriceAdminApp.js"></script>
+    <script src="js/MainPriceAdminController.js"></script>
+    <script src="js/AddingTariff/MainAddingTariffPriceAdminController.js"></script>
+    <script src="js/AddingTariff/DisplayAddingTariffPriceAdminController.js"></script>
+    <script src="js/AddingTariff/SelectExistTariffPriceAdminController.js"></script>
+    <script src="js/AddingTariff/SelectPromoCodeAdminController.js"></script>
+    <script src="js/DisplayPriceListPriceAdminController.js"></script>
+    <script src="js/PriceDetailPriceAdminController.js"></script>
+
+</head>
+<body>
+
+    <div ng-app="PriceAdminApp">
+        <div class="clearfix"></div>
+        <div id="MainPriceAdminController" ng-controller="MainPriceAdminController" class="container-fluid" ng-class="{'adding-tariff-style' : MainControllers.AddingTariffCtrl.isActive() }">
+            <div class="main-loader" ng-hide="mainReady">
+                <div class="loading-indicator"></div>
+            </div>
+            <div ng-show="mainReady" class="main-container ng-hide">
+                <div class="panel main-panel">
+                    <div class="panel-body">
+
+                        <div ng-controller="DisplayPriceListPriceAdminController" ng-show="MainControllers.DisplayPriceListCtrl.isActive()">
+                            <div class="col-md-12">
+
+                                <div class="ext-search-container col-md-2" ng-show="extSearch">
+                                    <div class="form-ext">
+                                        <div class="form-group text-center">
+                                            <a class="ext-search" ng-click="extSearchToggle()">
+                                                <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+                                                Расширенный поиск
+                                            </a>
+                                        </div>
+                                        <div class="fields-ext">
+                                            <div class="form-group">
+                                                <label>Наименование</label>
+                                                <input type="text" class="form-control" ng-model="extFilters.PriceName" my-enter="search()" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Код региона</label>
+                                                <input type="text" class="form-control" ng-model="extFilters.RegionCode" only-digit my-enter="search()" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Регион</label>
+                                                <input type="text" class="form-control" ng-model="extFilters.Region" my-enter="search()" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Группа</label>
+                                                <select class="form-control" ng-model="extFilters.GroupId" ng-options="k as v.name for (k, v) in PriceListGridSettings.priceGroupTypes" my-enter="search()"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="btn-ext">
+                                        <a class="btn btn-wr btn-block" ng-click="search()"><span class="glyphicon glyphicon-search" aria-hidden="true"></span> Поиск</a>
+                                        <a class="btn btn-default btn-block" ng-click="clearExtFilters()"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span> Сбросить</a>
+                                    </div>
+                                </div>
+
+                                <div class="content-container" ng-class="{'col-md-10':extSearch, 'col-md-12':!extSearch}">
+
+                                    <div class="top-bar">
+                                        <h2>
+                                            <span class="fa fa-rub"></span> Прайсы
+                                        </h2>
+                                        <div class="col-md-3 search-input-padding">
+                                            <div class="input-group">
+                                                <input type="text" ng-model="CommonSearchFilter" class="form-control" placeholder="Поиск..." my-enter="simpleSearch()" />
+                                                <a class="input-group-addon btn btn-wr" ng-click="simpleSearch()">
+                                                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span> Поиск
+                                                </a>
+
+                                            </div>
+                                            <a class="ext-search" ng-click="extSearchToggle()">
+                                                <span ng-if="!extSearch"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></span>
+                                                <span ng-if="extSearch"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></span>
+                                                Расширенный поиск
+                                            </a>
+                                        </div>
+
+
+                                        <div class="col-md-2 text-left without-padding">
+
+                                            <a class="btn btn-default text-center margin-top" ng-click="PriceListGridSettings.startPriceListLoad()" uib-tooltip="Обновить таблицу" tooltip-append-to-body="true" tooltip-placement="top">
+                                                <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                                            </a>
+
+                                            <a class="btn btn-default text-center margin-top" ng-click="ClearFilters()" uib-tooltip="Сбросить фильтры" tooltip-append-to-body="true" tooltip-placement="top">
+                                                <span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+                                            </a>
+
+                                        </div>
+                                    </div>
+
+
+                                    <div class="table-wrapper">
+                                        <table ng-table="PriceListGridSettings.data" class="table table-hover" template-pagination="templatePagination.html">
+                                            <colgroup>
+                                                <col width="40%" />
+                                                <col width="10%" />
+                                                <col width="35%" />
+                                                <col width="20%" />
+                                            </colgroup>
+                                            <tbody ng-show="(!PriceListGridSettings.isLoading) && ($data.length > 0)">
+                                                <tr ng-repeat="price in $data">
+                                                    <td title="'Наименование'" class="name-container" sortable="'PriceName'">
+                                                        <a href="#" class="abonent-link" ng-click="ShowPriceDetail(price.PriceId, price.PriceName)">{{price.PriceName}}</a>
+                                                    </td>
+                                                    <td title="'Код региона'" class="text-center" sortable="'RegionCode'">{{price.RegionCode}}</td>
+                                                    <td title="'Регион'" class="text-center" sortable="'Region'">{{price.Region}}</td>
+                                                    <td title="'Группа'" class="text-center" sortable="'GroupId'">
+                                                        <span class="label label-info pmark" uib-tooltip="{{PriceListGridSettings.priceGroupTypes[price.GroupId].name}}" tooltip-append-to-body="true">
+                                                            <span class="{{PriceListGridSettings.priceGroupTypes[price.GroupId].icon}}"></span>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tbody ng-show="PriceListGridSettings.isLoading" class="table-info">
+                                                <tr>
+                                                    <td colspan="7" class="text-center">
+                                                        <p class="spacer"></p>
+                                                        <div class="loading-indicator"></div>
+                                                        <span>Пожалуйста, подождите...</span>
+                                                        <p class="spacer"></p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tbody ng-show="(!PriceListGridSettings.isLoading) && ($data.length == 0)" class="table-info">
+                                                <tr>
+                                                    <td colspan="7" class="text-center">
+                                                        <p class="spacer"></p>
+                                                        <h1><span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span></h1><span>Ничего не найдено...</span><br />
+                                                        <p class="spacer"></p>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="7">
+                                                        <div class="bottom-bar col-md-12 without-padding">
+                                                            <div class="cust-pager col-md-4 without-padding" ng-if="PriceListGridSettings.getPageCount() > 1">
+                                                                Страница <strong>{{params.page()}}</strong>
+                                                                <span ng-if="PriceListGridSettings.getPageCount() > 1"> из <strong> {{PriceListGridSettings.getPageCount()}}</strong></span>
+                                                            </div>
+                                                            <div class="col-md-4 text-center without-padding" ng-if="PriceListGridSettings.getPageCount() > 1">
+                                                                <ul ng-if="PriceListGridSettings.getPageCount() > 1" class="pagination ng-table-pagination">
+                                                                    <li ng-class="{'disabled': params.page() == 1}">
+                                                                        <a ng-click="params.page() != 1 ? params.page(params.page()-1):angular.noop();" ng-disabled="params.page() == 1" href=""><span class="glyphicon glyphicon-triangle-left"></span></a>
+                                                                    </li>
+                                                                    <li ng-class="{'disabled': params.page() == PriceListGridSettings.getPageCount()}">
+                                                                        <a ng-click="params.page() !=  PriceListGridSettings.getPageCount() ? params.page(params.page()+1) : angular.noop();" ng-disabled="params.page() == PriceListGridSettings.getPageCount()" href=""><span class="glyphicon glyphicon-triangle-right"></span></a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                            <div class="col-md-4"></div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                            <script type="text/ng-template" id="templatePagination.html">
+                                            </script>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div ng-controller="PriceDetailPriceAdminController" ng-show="MainControllers.PriceDetailCtrl.isActive()">
+
+                            <div class="col-md-12 text-left">
+                                <a class="text-center text-size-main cursor" ng-click="MainControllers.DisplayPriceListCtrl.setActive()">Прайсы <span class="fa fa-caret-right caret-style" aria-hidden="true"></span></a>
+                                <span class="text-center text-size-low"> {{MainControllers.DisplayPriceListCtrl.price.name}}</span>
+                            </div>
+
+                            <div class="col-md-12">
+
+                                <div class="top-bar">
+                                    <h2>
+                                        <span class="fa fa-file-text-o"></span> {{MainControllers.DisplayPriceListCtrl.price.name}}
+                                    </h2>
+                                    <div class="col-md-6 search-input-padding">
+                                        <div class="input-group width without-border">
+
+                                            <a class="input-group-addon btn btn-wr" ng-click="MainControllers.AddingTariffCtrl.setActive()">
+                                                <span class="fa fa-plus" aria-hidden="true"></span> Добавить тариф
+                                            </a>
+
+                                            <a ng-click="DeactivateTariff.checkBeforeRequest()"
+                                               class="input-group-addon btn btn-wr">
+                                                <span class="fa fa-trash-o" aria-hidden="true"></span> Отключить
+                                            </a>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-12 section-tree-grid without-padding tree-table-wrapper">
+                                    <tree-grid ng-show="!PriceDetailGridSettings.isLoading"
+                                               tree-data="PriceDetailGridSettings.data"
+                                               template-url="customPriceDetailTreeGrid/template.html"
+                                               col-defs="PriceDetailGridSettings.col_defs"
+                                               expand-on="PriceDetailGridSettings.expandingProperty"
+                                               icon-leaf="fa fa-1-5x fa-square-o"
+                                               icon-expand="fa fa-1-5x fa-plus-square-o"
+                                               icon-collapse="fa fa-1-5x fa-minus-square-o">
+                                    </tree-grid>
+
+
+                                    <div ng-show="PriceDetailGridSettings.isLoading" class="table-info">
+                                        <div class="row">
+                                            <div class="col-md-12 text-center">
+                                                <p class="spacer"></p>
+                                                <div class="loading-indicator"></div>
+                                                <span>Пожалуйста, подождите...</span>
+                                                <p class="spacer"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+                                <script type="text/ng-template" id="customPriceDetailTreeGrid/template.html">
+                                    <div class="table-responsive">
+                                        <table class="table tree-grid">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <a ng-if="expandingProperty.sortable" ng-click="sortBy(expandingProperty)">{{expandingProperty.displayName || expandingProperty.field || expandingProperty}}</a>
+                                                        <span ng-if="!expandingProperty.sortable">{{expandingProperty.displayName || expandingProperty.field || expandingProperty}}</span>
+                                                        <i ng-if="expandingProperty.sorted" class="{{expandingProperty.sortingIcon}} pull-right"></i>
+                                                    </th>
+                                                    <th ng-repeat="col in colDefinitions">
+                                                        <a ng-if="col.sortable" ng-click="sortBy(col)">{{col.displayName || col.field}}</a>
+                                                        <span ng-if="!col.sortable">{{col.displayName || col.field}}</span>
+                                                        <i ng-if="col.sorted" class="{{col.sortingIcon}} pull-right"></i>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-click="expandingProperty.cellTemplateScope.setCurrentSectionSelected(row.branch)"
+                                                    ng-repeat="row in tree_rows | searchFor:$parent.filterString:expandingProperty:colDefinitions:true track by row.branch.uid"
+                                                    ng-class="'level-' + {{ row.level }} + (expandingProperty.cellTemplateScope.isCurrentSectionSelected(row.branch) ? ' active':'')" class="tree-grid-row">
+
+                                                    <td>
+
+                                                        <a>
+                                                            <i ng-class="row.tree_icon"
+                                                               ng-init="row.branch.expanded = (row.level < 3)"
+                                                               ng-click="$event.stopPropagation(); row.branch.expanded = !row.branch.expanded;"
+                                                               class="indented tree-icon"></i>
+                                                        </a>
+
+                                                        <span ng-click="expandingProperty.cellTemplateScope.editTariff.value = (row.branch.TariffId !== 0)"
+                                                              class="indented tree-label"
+                                                              ng-class="{'tariff-color' : row.branch.TariffId != 0}">
+                                                            {{row.branch[expandingProperty.field] || row.branch[expandingProperty]}}
+                                                        </span>
+
+                                                    </td>
+
+                                                    <td ng-repeat="col in colDefinitions">
+                                                        <div ng-if="col.cellTemplate" compile="col.cellTemplate" cell-template-scope="col.cellTemplateScope"></div>
+                                                        <div ng-if="!col.cellTemplate">{{row.branch[col.field]}}</div>
+                                                    </td>
+
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </script>
+
+
+                            </div>
+
+                            <div ng-show="DeactivateTariff.message.isOpen" class="disactive-tariff-dialog">
+                                <div class="disactive-tariff-message">
+                                    <h4 style="font-size: 16px; text-align: center;">
+                                        Вы действительно хотите отключить от “{{MainControllers.DisplayPriceListCtrl.price.name}}” тариф: “{{MainControllers.PriceDetailCtrl.selectedTariff.name}}” ?
+                                    </h4>
+                                    <a class="btn disactive-tariff-button" ng-click="DeactivateTariff.start();">Да</a>
+                                    <a class="btn disactive-tariff-button" ng-click="DeactivateTariff.message.clear()">Нет</a>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div ng-controller="MainAddingTariffPriceAdminController" ng-show="MainControllers.AddingTariffCtrl.isActive()">
+
+                            <div ng-controller="DisplayAddingTariffPriceAdminController" ng-show="AddingTariff.DisplayAddingTariffCtrl.isActive()">
+
+                                <div class="col-xs-12 without-padding adding-tariff-header">
+                                    <div class="col-xs-12 padding-right-25">
+                                        {{Tariff.editTariff.value == false ? 'Добавление ' : 'Редактирование' }} тарифа в "{{MainControllers.DisplayPriceListCtrl.price.name}}"
+                                    </div>
+                                    <i ng-click="CheckModalAndCloseAddingTariff(true, false)" class="fa fa-times adding-tariff-close" uib-tooltip="Закрыть" tooltip-placement="right-top" tooltip-append-to-body="true" aria-hidden="true"></i>
+                                </div>
+
+
+                                <div style="padding-left: 5px; padding-right: 10px;" class="col-xs-12">
+
+                                    <div class="col-xs-12 without-padding">
+
+                                        <div class="col-xs-12">
+                                            <div style="padding-top: 5px; padding-bottom: 5px; margin-top: 10px; margin-bottom: 0px; border-radius: 5px;" ng-repeat="error in CheckBySave.errorList" class="alert alert-danger col-xs-12">
+                                                <a href="#" class="close" data-dismiss="alert">×</a>
+                                                <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+                                                {{error.ErrorDescription}}
+                                            </div>
+                                        </div>
+
+                                        <div class="col-xs-12 only-padding-right-20 section-margin-top">
+                                            <div class="panel panel-info section-border without-margin">
+
+                                                <div class="panel-heading text-overflow padding-5 without-border background-white">
+                                                    <span uib-tooltip={{SelectedSection.pathToSection}} tooltip-placement="top-left" tooltip-append-to-body="true" aria-hidden="true"
+                                                          class="cursor section-font-size color-black"
+                                                          ng-click="SelectedSection.isSectionAreaOpen = !SelectedSection.isSectionAreaOpen">
+                                                        <i ng-show="SelectedSection.isSectionAreaOpen" class="fa fa-angle-double-up" aria-hidden="true"></i>
+                                                        <i ng-show="!SelectedSection.isSectionAreaOpen" class="fa fa-angle-double-down" aria-hidden="true"></i>
+                                                        Секция: {{SelectedSection.pathToSection}}
+                                                    </span>
+                                                </div>
+
+                                                <div class="panel-body {{SelectedSection.isSectionAreaOpen ? 'section-open' : 'section-close'}}">
+
+                                                    <div class="col-xs-12 without-margin parent-height short-section-tree-grid tree-table-wrapper">
+
+                                                        <tree-grid ng-show="!SectionGridSettings.isLoading"
+                                                                   class="parent-height"
+                                                                   template-url="customSectionTreeGrid/template.html"
+                                                                   expand-on="SectionGridSettings.expandingProperty"
+                                                                   tree-data="SectionGridSettings.data"
+                                                                   icon-leaf="fa fa-1-5x fa-square-o"
+                                                                   icon-expand="fa fa-1-5x fa-plus-square-o"
+                                                                   icon-collapse="fa fa-1-5x fa-minus-square-o">
+                                                        </tree-grid>
+                                                    </div>
+
+                                                    <div ng-show="SectionGridSettings.isLoading" class="table-info">
+                                                        <div class="row">
+                                                            <div class="col-xs-12 text-center">
+                                                                <p class="spacer"></p>
+                                                                <div class="loading-indicator"></div>
+                                                                <span>Пожалуйста, подождите...</span>
+                                                                <p class="spacer"></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+
+                                        <script type="text/ng-template" id="customSectionTreeGrid/template.html">
+                                            <div class="table-responsive">
+                                                <table class="table tree-grid">
+                                                    <tbody>
+                                                        <tr ng-repeat="row in tree_rows | filter:{visible:true} track by row.branch.uid"
+                                                            ng-class="'level-' + {{ row.level }} + (expandingProperty.cellTemplateScope.isCurrentSectionSelected(row.branch) ? ' active':'')"
+                                                            class="tree-grid-row">
+                                                            <td>
+                                                                <a>
+                                                                    <i ng-class="row.tree_icon"
+                                                                       ng-init="row.branch.expanded = (row.level < 2)"
+                                                                       ng-click="row.branch.expanded = !row.branch.expanded"
+                                                                       class="indented tree-icon"></i>
+                                                                </a>
+                                                                <span class="indented tree-label"
+                                                                      ng-click="expandingProperty.cellTemplateScope.setCurrentSectionSelected(row.branch)">
+                                                                    {{row.branch[expandingProperty.field] || row.branch[expandingProperty]}}
+                                                                </span>
+                                                            </td>
+                                                            <td ng-repeat="col in colDefinitions" style="width:100px;">
+                                                                <div ng-if="col.cellTemplate" compile="col.cellTemplate"></div>
+                                                                <div ng-if="!col.cellTemplate">{{row.branch[col.field]}}</div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </script>
+
+
+                                        <div class="col-xs-12 padding-right-20 section-margin-top">
+                                            <div class="col-xs-3 without-padding">
+                                                <span class="section-font-size">
+                                                    Наименование тарифа
+                                                </span>
+                                            </div>
+                                            <div class="col-xs-9 without-padding">
+                                                <div style="width: 100%" class="input-group height-30">
+                                                    <input ng-model="AddingTariff.DisplayAddingTariffCtrl.selectedTariff.name" disabled="" type="text" class="form-control height-30 pointer" />
+                                                    <a ng-show="!Tariff.editTariff.value"
+                                                       ng-click="AddingTariff.SelectExistTariffCtrl.setActive()"
+                                                       uib-tooltip="Выбрать тариф"
+                                                       tooltip-placement="right-top"
+                                                       tooltip-append-to-body="true"
+                                                       aria-hidden="true"
+                                                       class="input-group-addon btn btn-wr">...</a>
+                                                </div>
+                                            </div>
+                                            <div ng-show="Tariff.tariffAlreadyAdded.value" class="col-xs-12 without-padding text-align-right">
+                                                <span class="label label-warning font-size-0-8em ">В указанной секции уже есть такой тариф. Выберите другую секцию{{Tariff.editTariff.value == false ? ' или тариф.' : '.'}} </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-xs-12 padding-right-20 section-margin-top">
+                                            <div class="col-xs-3 without-padding">
+                                                <span class="section-font-size line-height">
+                                                    Наименование тарифа в прайсе
+                                                </span>
+                                            </div>
+                                            <div class="col-xs-9 without-padding">
+                                                <input ng-model="Tariff.nameInPrice" class="form-control height-30" type="text" />
+                                            </div>
+                                        </div>
+
+                                        <div class="col-xs-12 padding-right-20 section-margin-top">
+                                            <div class="col-xs-6 without-padding">
+                                                <div class="col-xs-6 without-padding">
+                                                    <span class="section-font-size">
+                                                        Дата начала тарифа
+                                                    </span>
+                                                </div>
+                                                <div class="col-xs-6 without-padding section">
+                                                    <div class="input-group cursor">
+                                                        <input readonly="readonly"
+                                                               type="text"
+                                                               class="form-control height-30 cursor background-white"
+                                                               uib-datepicker-popup="dd.MM.yyyy"
+                                                               ng-model="Tariff.startDate"
+                                                               is-open="Tariff.startDateOpened"
+                                                               datepicker-options="DatePickerSettings"
+                                                               clear-text="Очистить"
+                                                               close-text="Закрыть"
+                                                               current-text="Сегодня" />
+
+                                                        <a class="input-group-addon">
+                                                            <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                        </a>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="col-xs-6 without-padding">
+                                                <div class="col-xs-6 without-padding">
+                                                    <span class="section-font-size end-date-style">
+                                                        Дата окончания тарифа
+                                                    </span>
+                                                </div>
+                                                <div class="col-xs-6 without-padding section">
+                                                    <div class="input-group cursor">
+                                                        <input readonly="readonly"
+                                                               type="text"
+                                                               class="form-control height-30 cursor background-white"
+                                                               uib-datepicker-popup="dd.MM.yyyy"
+                                                               ng-model="Tariff.endDate"
+                                                               is-open="Tariff.endDateOpened"
+                                                               datepicker-options="DatePickerSettings"
+                                                               clear-text="Очистить"
+                                                               close-text="Закрыть"
+                                                               current-text="Сегодня" />
+
+                                                        <a ng-click="Tariff.endDateOpened = !Tariff.endDateOpened" class="input-group-addon">
+                                                            <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                        </a>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-xs-12 padding-right-20 section-margin-top">
+                                            <br />
+                                            <span class="section-font-size line-height color-black">
+                                                Укажите цены тарифа и сроки их действия
+                                            </span>
+                                        </div>
+
+                                        <div class="col-xs-12 padding-right-20">
+                                            <div class="col-xs-12 without-padding">
+                                                <div class="col-xs-6 without-padding text-center">
+                                                    Цена тарифа (руб.)
+                                                </div>
+
+                                                <div class="col-xs-3 without-padding text-center">
+                                                    Дата начала цены
+                                                </div>
+
+                                                <div class="col-xs-3 without-padding text-center">
+                                                    Дата окончания цены
+                                                </div>
+                                            </div>
+
+                                            <div ng-repeat="price in Tariff.tariffPrice.addedPrices track by $index" class="col-xs-12 without-padding margin-vert-3">
+                                                <div class="col-xs-6 without-padding text-center">
+                                                    <input ng-model="price.TariffPriceValue" class="form-control height-30" replace-digit />
+                                                </div>
+
+                                                <div class="col-xs-3 padding-horiz-3 text-center section">
+                                                    <div class="input-group cursor">
+
+                                                        <input readonly="readonly"
+                                                               type="text"
+                                                               class="form-control height-30 cursor background-white"
+                                                               uib-datepicker-popup="dd.MM.yyyy"
+                                                               ng-model="price.TariffPriceStartDate"
+                                                               is-open="price.startDateOpened"
+                                                               datepicker-options="DatePickerSettings"
+                                                               clear-text="Очистить"
+                                                               close-text="Закрыть"
+                                                               current-text="Сегодня" />
+
+                                                        <a ng-click="price.startDateOpened = !price.startDateOpened" class="input-group-addon">
+                                                            <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                        </a>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-xs-3 without-padding text-center section">
+                                                    <div class="input-group cursor">
+
+                                                        <input readonly="readonly"
+                                                               type="text"
+                                                               class="form-control height-30 cursor background-white"
+                                                               uib-datepicker-popup="dd.MM.yyyy"
+                                                               ng-model="price.TariffPriceEndDate"
+                                                               is-open="price.endDateOpened"
+                                                               datepicker-options="DatePickerSettings"
+                                                               clear-text="Очистить"
+                                                               close-text="Закрыть"
+                                                               current-text="Сегодня" />
+
+                                                        <a ng-click="price.endDateOpened = !price.endDateOpened" class="input-group-addon">
+                                                            <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                        </a>
+
+                                                    </div>
+                                                </div>
+
+                                                <a class="trash-style" ng-click="Tariff.tariffPrice.deletePrice($index)"
+                                                   uib-tooltip="Удалить" tooltip-append-to-body="true">
+                                                    <span class="fa fa-trash" aria-hidden="true"></span>
+                                                </a>
+                                            </div>
+
+
+                                            <a class="ext-search" ng-click="Tariff.tariffPrice.addPrice()">
+                                                Добавить цену
+                                            </a>
+
+                                        </div>
+
+
+
+
+
+
+                                        <div class="col-xs-12 section-margin-top without-padding">
+                                            <br />
+                                            <div style="padding: 0 0 3px 0" class="panel panel-info without-margin section-border">
+                                                <div class="panel-heading text-overflow padding-5 without-border background-white">
+                                                    <span class="cursor section-font-size color-black"
+                                                          ng-click="Tariff.promoCode.promoCodeArea.set(!Tariff.promoCode.promoCodeArea.isOpen)">
+                                                        <i ng-show="Tariff.promoCode.promoCodeArea.isOpen" class="fa fa-angle-double-up" aria-hidden="true"></i>
+                                                        <i ng-show="!Tariff.promoCode.promoCodeArea.isOpen" class="fa fa-angle-double-down" aria-hidden="true"></i>
+                                                        Промокоды  <span style="border-radius: 0.7em" class="label label-danger">{{Tariff.promoCode.addedPromo.length}}</span>
+                                                    </span>
+                                                </div>
+
+                                                <div class="panel-body {{Tariff.promoCode.promoCodeArea.isOpen ? 'promo-open ' : 'promo-close '}}{{Tariff.promoCode.promoCodeArea.isVisible ? 'promo-visible' : 'promo-hide'}}">
+                                                    <div class="col-xs-12 padding-right-20">
+                                                        <div class="col-xs-12 without-padding text-center">
+
+                                                            <div class="col-xs-7 without-padding">
+                                                                <div class="col-xs-11 without-padding">
+                                                                    <div class="col-xs-6 without-padding">
+                                                                        Наименование
+                                                                    </div>
+                                                                    <div class="col-xs-3 without-padding">
+                                                                        Значение
+                                                                    </div>
+                                                                    <div class="col-xs-2 without-padding">
+                                                                        Величина
+                                                                    </div>
+                                                                    <div class="col-xs-1 without-padding">
+                                                                        Тип
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xs-1 without-padding">
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-xs-5 without-padding">
+                                                                <div class="col-xs-2 without-padding" uib-tooltip="Количество применений" tooltip-append-to-body="true">
+                                                                    Кол-во
+                                                                </div>
+                                                                <div class="col-xs-10 without-padding">
+                                                                    <div class="col-xs-6 without-padding">
+                                                                        Дата начала
+                                                                    </div>
+                                                                    <div class="col-xs-6 without-padding">
+                                                                        Дата окончания
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+
+
+                                                        <div ng-repeat="promo in Tariff.promoCode.addedPromo track by $index" class="col-xs-12 without-padding text-center margin-vert-3">
+                                                            <div style="padding-right: 3px !important" class="col-xs-7 without-padding">
+                                                                <div class="col-xs-11 without-padding height-30 border-promo">
+                                                                    <div style="padding: 0 0 0 3px" class="col-xs-6 text-overflow" uib-tooltip={{promo.DiscountName}} tooltip-append-to-body="true">
+                                                                        {{promo.DiscountName}}
+                                                                    </div>
+                                                                    <div class="col-xs-3 without-padding text-overflow" uib-tooltip={{promo.Article}} tooltip-append-to-body="true">
+                                                                        {{promo.Article}}
+                                                                    </div>
+                                                                    <div class="col-xs-2 without-padding text-overflow">
+                                                                        {{promo.DiscountValue}}
+                                                                    </div>
+                                                                    <div class="col-xs-1 without-padding text-overflow">
+                                                                        {{promo.TypeOfUnit}}
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xs-1 promo-border-radius height-30 without-padding btn-wr cursor"
+                                                                     ng-click="Tariff.promoCode.goToSelectPromo($index)"
+                                                                     uib-tooltip="Выбрать промокод"
+                                                                     tooltip-placement="right-top"
+                                                                     tooltip-append-to-body="true"
+                                                                     aria-hidden="true">
+                                                                    ...
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-xs-5 without-padding">
+                                                                <div class="col-xs-2 without-padding">
+                                                                    <input ng-model="promo.UseLimit" class="form-control height-30" replace-digit />
+                                                                </div>
+                                                                <div class="col-xs-10 without-padding">
+                                                                    <div class="col-xs-6 padding-horiz-3 text-center section">
+                                                                        <div class="input-group ">
+                                                                            <input disabled=""
+                                                                                   readonly="readonly"
+                                                                                   type="text"
+                                                                                   class="form-control height-30 cursor background-white"
+                                                                                   uib-datepicker-popup="dd.MM.yyyy"
+                                                                                   ng-model="promo.StartDate"
+                                                                                   is-open="promo.isStartDateOpen"
+                                                                                   datepicker-options="DatePickerSettings"
+                                                                                   clear-text="Очистить"
+                                                                                   close-text="Закрыть"
+                                                                                   current-text="Сегодня" />
+
+                                                                            <a ng-click="" class="input-group-addon">
+                                                                                <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                                            </a>
+
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-xs-6 text-center without-padding section">
+                                                                        <div class="input-group ">
+                                                                            <input disabled=""
+                                                                                   readonly="readonly"
+                                                                                   type="text"
+                                                                                   class="form-control height-30 cursor background-white"
+                                                                                   uib-datepicker-popup="dd.MM.yyyy"
+                                                                                   ng-model="promo.EndDate"
+                                                                                   is-open="promo.isEndDateOpen"
+                                                                                   datepicker-options="DatePickerSettings"
+                                                                                   clear-text="Очистить"
+                                                                                   close-text="Закрыть"
+                                                                                   current-text="Сегодня" />
+
+                                                                            <a ng-click="" class="input-group-addon">
+                                                                                <span class="fa fa-calendar" aria-hidden="true"></span>
+                                                                            </a>
+
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <a class="trash-style" ng-click="Tariff.promoCode.deletePromo($index)"
+                                                               uib-tooltip="Удалить" tooltip-append-to-body="true">
+                                                                <span class="fa fa-trash" aria-hidden="true"></span>
+                                                            </a>
+
+                                                        </div>
+
+                                                        <a class="ext-search" ng-click="Tariff.promoCode.addPromo()">
+                                                            Добавить промокод
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <div ng-show="IsLoading" class="col-xs-12 table-info adding-tariff-loading text-center">
+                                        <p style="height: 30%;"></p>
+                                        <div class="loading-indicator"></div>
+                                    </div>
+
+                                </div>
+
+                                <div class="col-xs-12">
+                                    <div class="col-xs-12 text-align-right padding-bottom-20">
+                                        <br />
+
+                                        <button ng-click="Tariff.checkAndSave(false)"
+                                                uib-popover-template="'saveAddingTariffPopover.html'"
+                                                popover-trigger="outsideClick"
+                                                popover-is-open="CheckBySave.isNeedEditTariffDates"
+                                                popover-enable="CheckBySave.isNeedEditTariffDates"
+                                                class="btn btn-wr line-height-1 right">
+                                            Сохранить
+                                        </button>
+                                        <button ng-click="CheckModalAndCloseAddingTariff(true, false)" class="btn btn-default line-height-1 right">Отмена</button>
+                                    </div>
+                                </div>
+
+
+                                <script type="text/ng-template" id="modalAlertBeforeCloseAddingTariff.html">
+
+                                    <div class="modal-body text-align-center" id="modal-body" style="padding-top:20px;">
+                                        <span>Тариф не будет добавлен. Прервать процесс добавления тарифа?</span>
+                                    </div>
+                                    <div class="text-align-right" style="padding-right:15px; padding-bottom:15px">
+                                        <button ng-click="ok()" class="btn btn-wr line-height-0-75 right">Да</button>
+                                        <button ng-click="cancel()" class="btn btn-default line-height-0-75 right">Нет</button>
+                                    </div>
+
+
+                                </script>
+
+                                <script type="text/ng-template" id="saveAddingTariffPopover.html">
+
+                                    <div class="modal-body" style="padding-top:20px;">
+                                        <div class="text-align-center">
+                                            <span>Внимание!</span>
+                                        </div>
+                                        <div class="text-align-justify">
+
+                                            Имеются периоды:<br />
+                                            <div ng-repeat="warning in CheckBySave.warningList" class="col-xs-12 without-padding">
+                                                <span style="font-size: 85%" class="label label-warning">{{warning.ErrorDescription}}</span> <br />
+                                            </div>
+                                            в течении которых цена тарифа не установлена, пожалуйста, установите другие даты действия цен.
+                                        </div>
+                                    </div>
+                                    <div class="text-align-right" style="padding-right:15px; padding-bottom:15px">
+                                        <button ng-click="Tariff.checkAndSave(true)" class="btn btn-wr line-height-0-75 right">Продолжить</button>
+                                        <button ng-click="CheckBySave.set(false, [], [])" class="btn btn-default line-height-0-75 right">Отмена</button>
+                                    </div>
+
+                                </script>
+
+                            </div>
+
+
+                            <div ng-controller="SelectExistTariffPriceAdminController" ng-show="AddingTariff.SelectExistTariffCtrl.isActive()">
+
+                                <div class="col-xs-12 without-padding adding-tariff-header">
+                                    <div class="col-xs-12 padding-right-25">
+                                        Выбор тарифа
+                                        <span style="font-size: 85%" ng-show="SelectedTariff.tariffAlreadyAdded.value" class="label label-warning">
+                                            <span class="fa fa-exclamation-circle" aria-hidden="true"></span>
+                                            Выбранный тариф уже существует в указанной секции.
+                                        </span>
+                                    </div>
+                                    <i ng-click="CloseSelectExistTariff()" class="fa fa-times adding-tariff-close" uib-tooltip="Закрыть" tooltip-placement="right-top" tooltip-append-to-body="true" aria-hidden="true"></i>
+                                </div>
+
+                                <div class="col-xs-12 padding-bottom-20">
+
+
+                                    <div class="col-xs-12 without-padding">
+                                        <div class="col-xs-12 without-padding">
+                                            <br />
+                                            <span>Выберите необходимый тариф из списка</span>
+                                        </div>
+
+                                        <div class="col-xs-12 without-padding">
+                                            <br />
+
+                                            <div class="col-xs-6 search-input-padding">
+
+                                                <div class="input-group">
+                                                    <input ng-model="CommonSearchFilter" type="text" class="form-control height-30 padding-right-25" placeholder="Поиск..." ng-keypress="EnterClick($event)" />
+
+                                                    <a class="input-group-addon without-border btn btn-wr" ng-click="ExistTariffGridSettings.refreshTable()" uib-tooltip="Поиск" tooltip-append-to-body="true" tooltip-placement="top">
+                                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                                    </a>
+                                                </div>
+
+                                                <a class="adding-tariff-filter-clear" ng-click="CommonSearchFilter = ''" uib-tooltip="Сбросить фильтр" tooltip-append-to-body="true" tooltip-placement="top">
+                                                    <span class="fa fa-times" aria-hidden="true"></span>
+                                                </a>
+
+                                            </div>
+
+
+                                            <div class="col-xs-4 text-left without-padding">
+                                                <a style="padding-top: 0" class="btn btn-wr text-center height-30"
+                                                   ng-click="ExistTariffGridSettings.startDataLoad()"
+                                                   uib-tooltip="Обновить список тарифов" tooltip-append-to-body="true" tooltip-placement="top">
+                                                    <span class="fa fa-refresh" aria-hidden="true"></span>
+                                                </a>
+                                            </div>
+
+                                            <div style="visibility: hidden" class="col-xs-2 text-right">
+                                                <a style="padding-top: 0" class="btn btn-wr text-center height-30 right"><span class="fa fa-plus" aria-hidden="true"></span> Новый тариф</a>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="col-md-12 without-padding">
+
+                                        <div class="table-wrapper select-tariff-table">
+                                            <table ng-table="ExistTariffGridSettings.data" class="table" template-pagination="templatePagination.html">
+                                                <colgroup>
+                                                    <col width="42%" />
+                                                    <col width="22%" />
+                                                    <col width="22%" />
+                                                    <col width="6%" />
+                                                    <col width="4%" />
+                                                    <col width="4%" />
+                                                </colgroup>
+                                                <tbody ng-show="(!ExistTariffGridSettings.isLoading) && ($data.length > 0)">
+                                                    <tr ng-repeat="tariff in $data"
+                                                        ng-class="(tariff.TariffId == SelectedTariff.id ? ' active':'')"
+                                                        ng-click="SelectedTariff.setSelectedTariff(tariff.TariffId, tariff.TariffName)">
+
+                                                        <td header="'headerTariffName'" class="name-container text-overflow" sortable="'TariffName'"
+                                                            uib-tooltip="{{tariff.TariffName}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{tariff.TariffName}}
+                                                        </td>
+
+                                                        <td header="'headerTariffType'" class="text-center text-overflow" sortable="'TariffType'"
+                                                            uib-tooltip="{{tariff.TariffType}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{tariff.TariffType}}
+                                                        </td>
+
+                                                        <td header="'headerRestrictions'" class="text-center text-overflow" sortable="'Restrictions'"
+                                                            uib-tooltip="{{tariff.Restrictions}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{tariff.Restrictions}}
+                                                        </td>
+
+                                                        <td header="'headerTariffGroup'" class="text-center without-padding" sortable="'TariffGroupId'">
+                                                            <span class="label label-info pmark" uib-tooltip="{{ExistTariffGridSettings.tariffGroupTypes[tariff.TariffGroupId].name}}" tooltip-append-to-body="true">
+                                                                <span class="{{ExistTariffGridSettings.tariffGroupTypes[tariff.TariffGroupId].icon}}"></span>
+                                                            </span>
+                                                        </td>
+
+                                                        <td header="'headerDirectionCount'" class="text-center without-padding" sortable="'DirectionCount'"
+                                                            uib-tooltip="{{tariff.FixedDirections}}" tooltip-append-to-body="true">
+                                                            {{tariff.DirectionCount != 0 ? tariff.DirectionCount : ''}}
+                                                        </td>
+
+                                                        <td header="'headerEgrul'" class="text-center without-padding" sortable="'IsEgrul'">
+                                                            <span class="fa {{tariff.IsEgrul ? 'fa-check-square-o' : 'fa-square-o'}}" aria-hidden="true"></span>
+                                                        </td>
+
+                                                    </tr>
+                                                </tbody>
+                                                <tbody ng-show="ExistTariffGridSettings.isLoading" class="table-info">
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">
+                                                            <p class="spacer"></p>
+                                                            <div class="loading-indicator"></div>
+                                                            <span>Пожалуйста, подождите...</span>
+                                                            <p class="spacer"></p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tbody ng-show="(!ExistTariffGridSettings.isLoading) && ($data.length == 0)" class="table-info">
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">
+                                                            <p class="spacer"></p>
+                                                            <h1>
+                                                                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+                                                            </h1><span>Ничего не найдено...</span><br />
+                                                            <p class="spacer"></p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <div class="bottom-bar col-md-12 without-padding">
+                                                                <div class="cust-pager col-md-4 without-padding" ng-if="ExistTariffGridSettings.getPageCount() > 1">
+                                                                    Страница <strong>{{params.page()}}</strong>
+                                                                    <span ng-if="ExistTariffGridSettings.getPageCount() > 1"> из <strong> {{ExistTariffGridSettings.getPageCount()}}</strong></span>
+                                                                </div>
+                                                                <div class="col-md-4 text-center without-padding" ng-if="ExistTariffGridSettings.getPageCount() > 1">
+                                                                    <ul ng-if="ExistTariffGridSettings.getPageCount() > 1" class="pagination ng-table-pagination">
+                                                                        <li ng-class="{'disabled': params.page() == 1}">
+                                                                            <a ng-click="params.page() != 1 ? params.page(params.page()-1):angular.noop();" ng-disabled="params.page() == 1" href=""><span class="glyphicon glyphicon-triangle-left"></span></a>
+                                                                        </li>
+                                                                        <li ng-class="{'disabled': params.page() == ExistTariffGridSettings.getPageCount()}">
+                                                                            <a ng-click="params.page() != ExistTariffGridSettings.getPageCount() ? params.page(params.page()+1) : angular.noop();" ng-disabled="params.page() == ExistTariffGridSettings.getPageCount()" href=""><span class="glyphicon glyphicon-triangle-right"></span></a>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="col-md-4"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                                <script type="text/ng-template" id="templatePagination.html">
+                                                </script>
+                                            </table>
+                                        </div>
+
+                                    </div>
+
+                                    <script type="text/ng-template" id="headerTariffName">
+                                        <span class="ng-binding sort-indicator">Наименование</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerTariffType">
+                                        <span class="ng-binding sort-indicator">Тип тарифа</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerRestrictions">
+                                        <span class="ng-binding sort-indicator">Ограничения</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerEgrul">
+                                        <span style="cursor:pointer;" class="fa fa-list-alt" uib-tooltip="ЕГРЮЛ" tooltip-placement="top" aria-hidden="true"></span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerDirectionCount">
+                                        <span style="cursor:pointer;" class="fa fa-exchange" uib-tooltip="Направления" tooltip-placement="top" aria-hidden="true"></span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerTariffGroup">
+                                        <span style="cursor:pointer;" class="fa fa-object-group" uib-tooltip="Группа тарифа" tooltip-placement="top" aria-hidden="true"></span>
+                                    </script>
+
+
+                                    <div class="col-xs-12 without-padding text-align-right">
+                                        <br />
+
+                                        <button ng-click="SelectedTariff.setParentSelectedTariff(); CloseSelectExistTariff()" class="btn btn-wr line-height-1 right">Принять</button>
+                                        <button ng-click="CloseSelectExistTariff()" class="btn btn-default line-height-1 right">Отмена</button>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div ng-controller="SelectPromoCodePriceAdminController" ng-show="AddingTariff.SelectPromoCodeCtrl.isActive()">
+
+                                <div class="col-xs-12 without-padding adding-tariff-header">
+                                    <div class="col-xs-12 padding-right-25">
+                                        {{NewPromo.isAreaOpen.value ? 'Создание ' : 'Выбор '}} промокода
+                                        <span style="font-size: 85%" ng-show="SelectedDiscount.discountAlredySelected.value && !NewPromo.isAreaOpen.value" class="label label-warning">
+                                            <span class="fa fa-exclamation-circle" aria-hidden="true"></span>
+                                            Данный промокод уже выбран.
+                                        </span>
+                                    </div>
+                                    <i ng-click="CloseSelectPromoCode()" class="fa fa-times adding-tariff-close" uib-tooltip="Закрыть" tooltip-placement="right-top" tooltip-append-to-body="true" aria-hidden="true"></i>
+                                </div>
+
+                                <div class="col-xs-12 padding-bottom-20">
+
+                                    <div class="col-xs-12 without-padding create-promo {{NewPromo.isAreaOpen.value ? 'section-open ' : 'create-promo-close '}}">
+
+                                        <div class="col-xs-12">
+                                            <div style="padding-top: 2px; padding-bottom: 2px; margin-top: 5px; margin-bottom: 0px; border-radius: 5px;" ng-repeat="error in NewPromo.errorList" class="alert alert-danger col-xs-12">
+                                                <a href="#" class="close" data-dismiss="alert">×</a>
+                                                <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+                                                {{error.ErrorDescription}}
+                                            </div>
+                                        </div>
+
+
+                                        <div style="padding-bottom: 10px; padding-top: 10px; min-height: 94px;" class="col-xs-12">
+                                            <div class="col-xs-6 padding-5">
+                                                <span class="create-promo-header">Наименование</span>
+                                                <input style="padding-left: 5px" ng-model="NewPromo.name" class="input full-width border-radius-5" />
+                                                <div ng-show="NewPromo.name == '' && NewPromo.isShowAlerts.value" class="col-xs-12 without-padding text-align-right">
+                                                    <span class="label label-warning font-size-0-8em ">Укажите наименование</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xs-2 padding-5">
+                                                <span class="create-promo-header">Значение</span>
+                                                <input style="padding-left: 5px" ng-model="NewPromo.article" class="input full-width border-radius-5" />
+                                                <div ng-show="NewPromo.article == '' && NewPromo.isShowAlerts.value" class="col-xs-12 without-padding text-align-right">
+                                                    <span class="label label-warning font-size-0-8em ">Укажите значение</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xs-2 padding-5">
+                                                <span class="create-promo-header">Величина</span>
+                                                <input style="padding-left: 5px" ng-model="NewPromo.value" class="input full-width border-radius-5" replace-digit />
+                                                <div ng-show="NewPromo.value == '' && NewPromo.isShowAlerts.value" class="col-xs-12 without-padding text-align-right">
+                                                    <span class="label label-warning font-size-0-8em ">Укажите величину</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xs-1 padding-5">
+                                                <span class="create-promo-header">Тип</span>
+                                                <select style="border-radius: 4px" ng-model="NewPromo.typeOfUnit">
+                                                    <option value="1">%</option>
+                                                    <option value="2">руб.</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-xs-1 padding-5 text-center">
+                                                <div style="margin-top: 1.3em" class="col-xs-12 without-padding">
+
+                                                    <i ng-click="NewPromo.save()"
+                                                       style="font-size: 1.9em; color: green" class="fa {{NewPromo.isLoading ? 'fa-spinner fa-spin' : 'fa-check'}} cursor" aria-hidden="true"
+                                                       uib-tooltip="{{NewPromo.isLoading ? '' : 'Сохранить'}}" tooltip-append-to-body="true"></i>
+
+                                                    <i ng-click="NewPromo.clear(); NewPromo.isAreaOpen.set(false)"
+                                                       style="font-size: 1.9em; color: red" class="fa fa-times cursor" aria-hidden="true"
+                                                       uib-tooltip="Отмена" tooltip-append-to-body="true"></i>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-12 without-padding">
+                                        <div class="col-xs-12 without-padding">
+                                            <br />
+                                            <span>Выберите необходимый промокод из списка</span>
+                                        </div>
+
+                                        <div class="col-xs-12 without-padding">
+                                            <br />
+
+                                            <div class="col-xs-6 search-input-padding">
+
+                                                <div class="input-group">
+                                                    <input ng-model="CommonSearchFilter" type="text" class="form-control height-30 padding-right-25" placeholder="Поиск..." ng-keypress="EnterClick($event)" />
+
+                                                    <a class="input-group-addon without-border btn btn-wr" ng-click="PromoCodeGridSettings.refreshTable()" uib-tooltip="Поиск" tooltip-append-to-body="true" tooltip-placement="top">
+                                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                                    </a>
+                                                </div>
+
+                                                <a class="adding-tariff-filter-clear" ng-click="CommonSearchFilter = ''" uib-tooltip="Сбросить фильтр" tooltip-append-to-body="true" tooltip-placement="top">
+                                                    <span class="fa fa-times" aria-hidden="true"></span>
+                                                </a>
+
+                                            </div>
+
+
+                                            <div class="col-xs-3 text-left without-padding">
+                                                <a style="padding-top: 0" class="btn btn-wr text-center height-30"
+                                                   ng-click="PromoCodeGridSettings.startDataLoad()"
+                                                   uib-tooltip="Обновить список тарифов" tooltip-append-to-body="true" tooltip-placement="top">
+                                                    <span class="fa fa-refresh" aria-hidden="true"></span>
+                                                </a>
+                                            </div>
+
+                                            <div class="col-xs-3 without-padding text-right">
+                                                <a ng-click="NewPromo.isAreaOpen.set(true)" style="padding-top: 0" class="btn btn-wr text-center height-30 right"><span class="fa fa-plus" aria-hidden="true"></span> Новый промокод</a>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+                                    <div class="col-md-12 without-padding">
+
+                                        <div class="table-wrapper select-tariff-table">
+                                            <table ng-table="PromoCodeGridSettings.data" class="table" template-pagination="templatePagination.html">
+                                                <colgroup>
+                                                    <col width="50%" />
+                                                    <col width="25%" />
+                                                    <col width="15%" />
+                                                    <col width="10%" />
+                                                </colgroup>
+
+                                                <tbody style="border-width: 1px" ng-show="(!PromoCodeGridSettings.isLoading) && ($data.length > 0)">
+                                                    <tr ng-repeat="promo in $data"
+                                                        ng-class="(promo.DiscountId == SelectedDiscount.id ? ' active':'')"
+                                                        ng-click="SelectedDiscount.set(promo)">
+
+                                                        <td header="'headerDiscountName'" class="name-container text-overflow" sortable="'DiscountName'"
+                                                            uib-tooltip="{{promo.DiscountName}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{promo.DiscountName}}
+                                                        </td>
+
+                                                        <td header="'headerArticle'" class="text-center text-overflow" sortable="'Article'"
+                                                            uib-tooltip="{{promo.Article}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{promo.Article}}
+                                                        </td>
+
+                                                        <td header="'headerDiscountValue'" class="text-center text-overflow" sortable="'DiscountValue'"
+                                                            uib-tooltip="{{promo.DiscountValue}}" tooltip-popup-delay='500' tooltip-append-to-body="true">
+                                                            {{promo.DiscountValue}}
+                                                        </td>
+
+                                                        <td header="'headerTypeOfUnit'" class="text-center without-padding" sortable="'TypeOfUnit'">
+                                                            {{promo.TypeOfUnit}}
+                                                        </td>
+
+                                                    </tr>
+                                                </tbody>
+                                                <tbody ng-show="PromoCodeGridSettings.isLoading" class="table-info">
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">
+                                                            <p class="spacer"></p>
+                                                            <div class="loading-indicator"></div>
+                                                            <span>Пожалуйста, подождите...</span>
+                                                            <p class="spacer"></p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tbody ng-show="(!PromoCodeGridSettings.isLoading) && ($data.length == 0)" class="table-info">
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">
+                                                            <p class="spacer"></p>
+                                                            <h1>
+                                                                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+                                                            </h1><span>Ничего не найдено...</span><br />
+                                                            <p class="spacer"></p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <div class="bottom-bar col-md-12 without-padding">
+                                                                <div class="cust-pager col-md-4 without-padding" ng-if="PromoCodeGridSettings.getPageCount() > 1">
+                                                                    Страница <strong>{{params.page()}}</strong>
+                                                                    <span ng-if="PromoCodeGridSettings.getPageCount() > 1"> из <strong> {{PromoCodeGridSettings.getPageCount()}}</strong></span>
+                                                                </div>
+                                                                <div class="col-md-4 text-center without-padding" ng-if="PromoCodeGridSettings.getPageCount() > 1">
+                                                                    <ul ng-if="PromoCodeGridSettings.getPageCount() > 1" class="pagination ng-table-pagination">
+                                                                        <li ng-class="{'disabled': params.page() == 1}">
+                                                                            <a ng-click="params.page() != 1 ? params.page(params.page()-1):angular.noop();" ng-disabled="params.page() == 1" href=""><span class="glyphicon glyphicon-triangle-left"></span></a>
+                                                                        </li>
+                                                                        <li ng-class="{'disabled': params.page() == PromoCodeGridSettings.getPageCount()}">
+                                                                            <a ng-click="params.page() != PromoCodeGridSettings.getPageCount() ? params.page(params.page()+1) : angular.noop();" ng-disabled="params.page() == PromoCodeGridSettings.getPageCount()" href=""><span class="glyphicon glyphicon-triangle-right"></span></a>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div class="col-md-4"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                                <script type="text/ng-template" id="templatePagination.html">
+                                                </script>
+                                            </table>
+                                        </div>
+
+                                    </div>
+
+                                    <script type="text/ng-template" id="headerDiscountName">
+                                        <span class="ng-binding sort-indicator">Наименование</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerArticle">
+                                        <span class="ng-binding sort-indicator">Значение</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerDiscountValue">
+                                        <span class="ng-binding sort-indicator">Величина</span>
+                                    </script>
+
+                                    <script type="text/ng-template" id="headerTypeOfUnit">
+                                        <span class="ng-binding sort-indicator">Тип</span>
+                                    </script>
+
+
+                                    <div class="col-xs-12 without-padding text-align-right">
+                                        <br />
+
+                                        <button ng-disabled="SelectedDiscount.discountAlredySelected.value" ng-click="SelectedDiscount.setParentDiscount(); CloseSelectPromoCode();" class="btn btn-wr line-height-1 right">Принять</button>
+                                        <button ng-click="CloseSelectPromoCode()" class="btn btn-default line-height-1 right">Отмена</button>
+                                    </div>
+
+                                    <div style="height: 100%" ng-show="NewPromo.isAreaOpen.value" class="col-xs-12 table-info adding-tariff-loading text-center">
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>
